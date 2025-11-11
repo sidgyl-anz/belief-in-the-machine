@@ -38,13 +38,24 @@ All model outputs are stored in the `/outputs` directory.
 
 ### Running Experiments and Evaluation
 
-To conduct your own experiments, please feel free to modify and use the `run_experiments.py` file. Before executing this code, however, please ensure that you have installed all the required packages (e.g., `pip install -r requirements.txt`) and have exported all relevant OpenAI API keys and credentials to your local environment (e.g., `export OPENAI_API_KEY="YOUR_API_KEY"`).
+To conduct your own experiments, use the `run_experiments.py` helper. Install the required dependencies and run the script directly:
 
-Here is an example command to run the experiments:
-
-```python
-[TBD]
+```bash
+pip install -r requirements.txt
+python run_experiments.py
 ```
+
+By default, the script filters the KaBLE dataset to the **BioMedicine** subject. Supply `--subjects` to override the selection or `--all-subjects` to process every available prompt.
+
+### Streamlit experiment runner
+
+This repository also includes a Streamlit application (`streamlit_app.py`) that wraps the helper above. It offers a graphical interface for choosing subjects, setting custom output paths, and downloading the filtered prompts. Run it locally with:
+
+```bash
+streamlit run streamlit_app.py
+```
+
+The app detects the `PORT` environment variable automatically, enabling deployment to services such as Cloud Run using the standard Streamlit launch command.
 
 
 ## Citation
