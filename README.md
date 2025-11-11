@@ -45,17 +45,39 @@ pip install -r requirements.txt
 python run_experiments.py
 ```
 
-By default, the script filters the KaBLE dataset to the **BioMedicine** subject. Supply `--subjects` to override the selection or `--all-subjects` to process every available prompt.
+By default, the script filters the KaBLE dataset to the **BioMedicine** subject. Supply `--subjects` to override the selection or `--all-subjects` to process every available prompt. Use `--test-mode` to quickly validate an environment by limiting the run to the first five matching prompts.
 
 ### Streamlit experiment runner
 
-This repository also includes a Streamlit application (`streamlit_app.py`) that wraps the helper above. It offers a graphical interface for choosing subjects, setting custom output paths, and downloading the filtered prompts. Run it locally with:
+This repository also includes a Streamlit application (`streamlit_app.py`) that wraps the helper above. It offers a graphical interface for choosing subjects, setting custom output paths, toggling the five-prompt test mode, and downloading the filtered prompts. Run it locally with:
 
 ```bash
 streamlit run streamlit_app.py
 ```
 
 The app detects the `PORT` environment variable automatically, enabling deployment to services such as Cloud Run using the standard Streamlit launch command.
+
+#### Deploying to Cloud Run
+
+A ready-to-use `Dockerfile` is included at the repository root. Build and run the container locally with:
+
+```bash
+docker build -t belief-streamlit .
+docker run -p 8080:8080 belief-streamlit
+```
+
+To publish on Cloud Run, push the image to Artifact Registry (or Container Registry) and create the service while allowing unauthenticated invocations:
+
+```bash
+gcloud builds submit --tag "gcr.io/<PROJECT_ID>/belief-streamlit"
+gcloud run deploy belief-streamlit \
+  --image "gcr.io/<PROJECT_ID>/belief-streamlit" \
+  --platform managed \
+  --allow-unauthenticated \
+  --region <REGION>
+```
+
+The container automatically starts Streamlit on port 8080 and respects the `PORT` environment variable provided by Cloud Run.
 
 
 ## Citation

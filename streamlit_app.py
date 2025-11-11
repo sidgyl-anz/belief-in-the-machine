@@ -21,6 +21,7 @@ from run_experiments import DEFAULT_SUBJECTS, RunSummary, discover_subjects, run
 
 _DEFAULT_DATASET_DIR = Path(__file__).resolve().parent / "kable-dataset"
 _PREVIEW_LIMIT = 5
+_TEST_MODE_LIMIT = 5
 
 
 @st.cache_data(show_spinner=False)
@@ -144,6 +145,15 @@ def main() -> None:
     )
     output_path = Path(output_input).expanduser() if output_input.strip() else None
 
+    test_mode = st.toggle(
+        "Test mode (limit to 5 prompts)",
+        value=False,
+        help=(
+            "Process only the first five matching prompts. Useful for verifying "
+            "a deployment before running the full dataset."
+        ),
+    )
+
     run_clicked = st.button("Prepare prompts")
 
     if run_clicked:
@@ -152,6 +162,7 @@ def main() -> None:
                 dataset_dir=dataset_dir,
                 subjects=selected_subjects,
                 output_path=output_path,
+                max_examples=_TEST_MODE_LIMIT if test_mode else None,
             )
         _render_summary(summary)
 

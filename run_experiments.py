@@ -116,6 +116,7 @@ def run_experiments(
     subjects: Sequence[str] | None = DEFAULT_SUBJECTS,
     output_path: Path | None = None,
     runner: Callable[[Example], None] | None = None,
+    max_examples: int | None = None,
 ) -> RunSummary:
     """Prepare experiments for the provided subjects.
 
@@ -132,16 +133,26 @@ def run_experiments(
         Optional callable that will be invoked for each :class:`Example` to
         execute the actual model interaction. When ``None`` (the default), the
         function simply prepares the prompts without performing any inference.
+    max_examples:
+        Optional cap on the number of examples to process. When provided, the
+        first ``max_examples`` prompts matching the subject selection are
+        prepared. This is useful for running quick smoke tests without
+        processing the entire dataset.
     """
 
     dataset_root = dataset_dir or DATASET_DIR
     selected_subjects = None if subjects is None else tuple(subjects)
     output_file = _build_output_path(subjects=selected_subjects, output_path=output_path)
 
-    examples: list[Example] = list(
-        iter_examples(dataset_dir=dataset_root, subject_filter=selected_subjects)
-    )
-    counts = Counter(example.subject for example in examples)
+    examples_iter = iter_examples(dataset_dir=dataset_root, subject_filter=selected_subjects)
+    examples: list[Example] = []
+    counts: Counter[str] = Counter()
+
+    for example in examples_iter:
+        examples.append(example)
+        counts[example.subject] += 1
+        if max_examples is not None and len(examples) >= max_examples:
+            break
 
     with output_file.open("w", encoding="utf-8") as handle:
         for example in examples:
@@ -193,6 +204,11 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="List all subjects in the dataset and exit.",
     )
+    parser.add_argument(
+        "--test-mode",
+        action="store_true",
+        help="Limit the run to the first 5 matching examples for quick validation.",
+    )
     return parser.parse_args(argv)
 
 
@@ -218,6 +234,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         dataset_dir=args.dataset_dir,
         subjects=selected_subjects,
         output_path=args.output,
+        max_examples=5 if args.test_mode else None,
     )
     print(summary)
     return 0

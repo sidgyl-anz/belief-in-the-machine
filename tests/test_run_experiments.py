@@ -41,6 +41,21 @@ class RunExperimentsTestCase(unittest.TestCase):
         self.assertIn("BioMedicine", subjects)
         self.assertGreater(len(subjects), 1)
 
+    def test_test_mode_limits_examples(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            output_path = Path(tmpdir) / "test-mode.jsonl"
+            summary = run_experiments.run_experiments(
+                output_path=output_path,
+                max_examples=5,
+            )
+
+            self.assertEqual(summary.total_examples, 5)
+            self.assertEqual(sum(summary.subject_counts.values()), 5)
+
+            with output_path.open("r", encoding="utf-8") as handle:
+                lines = [line for line in handle.readlines() if line.strip()]
+            self.assertEqual(len(lines), 5)
+
 
 if __name__ == "__main__":
     unittest.main()
