@@ -17,6 +17,7 @@ from typing import Iterable
 
 import streamlit as st
 
+from chatgpt_runner import ChatGPTRunner
 from run_experiments import DEFAULT_SUBJECTS, RunSummary, discover_subjects, run_experiments
 
 _DEFAULT_DATASET_DIR = Path(__file__).resolve().parent / "kable-dataset"
@@ -154,17 +155,77 @@ def main() -> None:
         ),
     )
 
+    st.write("### ChatGPT integration (optional)")
+    chatgpt_enabled = st.toggle(
+        "Send prompts to the ChatGPT API",
+        value=False,
+        help=(
+            "When enabled, each prepared prompt is forwarded to the configured "
+            "OpenAI model so you can capture responses alongside the JSONL export."
+        ),
+    )
+
+    chatgpt_model = "gpt-4o-mini"
+    chatgpt_api_key = ""
+    chatgpt_output_path: Path | None = None
+    if chatgpt_enabled:
+        chatgpt_api_key = st.text_input(
+            "OpenAI API key",
+            value=os.environ.get("OPENAI_API_KEY", ""),
+            type="password",
+            help="Used only to contact the ChatGPT API from this session.",
+        )
+        chatgpt_model = st.text_input(
+            "Model name",
+            value="gpt-4o-mini",
+            help="Provide any ChatGPT-compatible model identifier.",
+        )
+        chatgpt_output_input = st.text_input(
+            "Responses output path (optional)",
+            value="",
+            help=(
+                "Path to store ChatGPT responses as JSONL. Leave blank to default "
+                "to outputs/<model>-responses.jsonl."
+            ),
+        )
+        if chatgpt_output_input.strip():
+            chatgpt_output_path = Path(chatgpt_output_input).expanduser()
+
     run_clicked = st.button("Prepare prompts")
 
     if run_clicked:
+        runner = None
+        if chatgpt_enabled:
+            try:
+                runner = ChatGPTRunner(
+                    model=chatgpt_model.strip() or "gpt-4o-mini",
+                    api_key=chatgpt_api_key.strip() or None,
+                    output_path=chatgpt_output_path,
+                )
+            except ValueError as error:
+                st.error(str(error))
+                st.stop()
+
         with st.spinner("Running experiment preparation..."):
             summary = run_experiments(
                 dataset_dir=dataset_dir,
                 subjects=selected_subjects,
                 output_path=output_path,
                 max_examples=_TEST_MODE_LIMIT if test_mode else None,
+                runner=runner,
             )
         _render_summary(summary)
+
+        if runner is not None:
+            responses_path = runner.output_path
+            if responses_path.exists():
+                st.success(f"ChatGPT responses saved to {responses_path}")
+                preview = _preview_examples(responses_path)
+                if preview:
+                    st.write(f"### ChatGPT preview (first {len(preview)} responses)")
+                    st.json(preview)
+            else:
+                st.warning("No ChatGPT responses were recorded for this run.")
 
 
 if __name__ == "__main__":

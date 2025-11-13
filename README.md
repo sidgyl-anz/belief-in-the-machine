@@ -57,6 +57,10 @@ streamlit run streamlit_app.py
 
 The app detects the `PORT` environment variable automatically, enabling deployment to services such as Cloud Run using the standard Streamlit launch command.
 
+#### Streaming prompts through ChatGPT
+
+Toggle the **Send prompts to the ChatGPT API** option inside the Streamlit app to evaluate the KaBLE prompts directly with OpenAI models. When enabled, the interface asks for an API key (or uses `OPENAI_API_KEY`), the target model name (defaults to `gpt-4o-mini`), and an optional location for storing responses as JSONL. Each prompt is forwarded through the helper defined in `chatgpt_runner.py`, and the resulting completions are previewed in the UI alongside the filtered prompt file for easy side-by-side comparisons.
+
 #### Deploying to Cloud Run
 
 A ready-to-use `Dockerfile` is included at the repository root. Build and run the container locally with:
